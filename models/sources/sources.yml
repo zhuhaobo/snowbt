@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+
+  - name: xero
+    database: dwh_pwx_poc
+    schema: xero
+    tables:
+      - name: invoice
+        description: "test"

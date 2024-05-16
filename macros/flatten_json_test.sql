@@ -1,8 +1,4 @@
-
-{{ config(
-    schema='std',
-    materialized='table'
-) }}
+{% macro generate_flatten_json_test(model_name, json_column) %}
 
 SELECT 
   i.value:AmountCredited::STRING AS AmountCredited,
@@ -25,5 +21,7 @@ SELECT
   i.value:TotalTax::STRING AS TotalTax,
   i.value:Type::STRING AS Type,
   i.value:UpdatedDateUTC::STRING AS UpdatedDateUTC
-FROM DWH_PWX_POC.XERO.INVOICE,
+FROM {{ model_name }},
 LATERAL FLATTEN(input => PARSE_JSON(invoice.invoices)) AS i
+
+{% endmacro %}

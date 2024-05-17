@@ -29,7 +29,7 @@ with low_level_flatten as (
 {# /* explode JSON columns and format the column names  */ #}
 select 
 {% for json_path in res_list %}
-    value:{{ json_path }} as {{ json_path | replace(".", "_") | replace("[", "_") | replace("]", "") | replace("'", "") }}{{ ", " if not loop.last else "" }}
+    value:{{ json_path }} ::string as {{ json_path | replace(".", "_") | replace("[", "_") | replace("]", "") | replace("'", "") }}{{ ", " if not loop.last else "" }}
 {% endfor %}
 
 from {{ model_name }},

@@ -7,4 +7,7 @@ sources:
     schema: xero
     tables:
       - name: invoice
-        description: "test"
+        description: "invoice in xero"
+
+      - name: item
+        description: "item in xero"

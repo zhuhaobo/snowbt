@@ -1,22 +1,37 @@
-{% macro flatten_json(model_name, json_column) %}
-WITH json_data AS (
-  SELECT
-    PARSE_JSON({{ json_column }}) AS json_data
-  FROM
-    {{ model_name }}
-),
-json_flat AS (
-  SELECT
-    key,
-    json_data.json_data:value AS value
-  FROM
-    json_data,
-    LATERAL FLATTEN(input => json_data.json_data)
+{% macro generate_flatten_json(model_name, json_column) %}
+
+{% set get_json_path %}
+
+{# /* get json keys and paths with the FLATTEN function supported by Snowflake */ #}
+with low_level_flatten as (
+	select f.key as json_key, REGEXP_REPLACE(f.path, '^\\[\\d+\\]\\.', '') as json_path, 
+	f.value as json_value
+	from {{ model_name }}, 
+	lateral flatten(input => parse_json({{ json_column }}), recursive => true ) f
 )
-SELECT
-  {% for key in range(0, json_flat.column_names | length - 1) %}
-    value:{{ json_flat.column_names[key] }}::STRING AS {{ json_flat.column_names[key] }}{% if not loop.last %},{% endif %}
-  {% endfor %}
-FROM
-  json_flat
+
+	{# /* get the unique and flattest paths  */ #}
+	{# /* you could modify the function to determine the level of nested JSON  */ #}
+	select distinct json_path
+	from low_level_flatten
+	where not contains(json_value, '{')
+
+{% endset %}
+
+{# /* the value in the column will be the attributes of you exploded result  */ #}
+{% set res = run_query(get_json_path) %}
+{% if execute %}
+    {% set res_list = res.columns[0].values() %}
+{% else %}
+    {% set res_list = [] %}
+{% endif %}
+
+{# /* explode JSON columns and format the column names  */ #}
+select 
+{% for json_path in res_list %}
+    value:{{ json_path }} as {{ json_path | replace(".", "_") | replace("[", "_") | replace("]", "") | replace("'", "") }}{{ ", " if not loop.last else "" }}
+{% endfor %}
+
+from {{ model_name }},
+lateral flatten(input => parse_json({{ json_column }}))
 {% endmacro %}

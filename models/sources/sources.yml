@@ -11,3 +11,6 @@ sources:
 
       - name: item
         description: "item in xero"
+
+      - name: item222
+        description: "item in xero"
